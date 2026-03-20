@@ -202,9 +202,10 @@ card.innerHTML = `
     function initFilters() {
         [...new Set(products.map(p => p[5]))].forEach(v => { if(v) document.getElementById('l1Filter').innerHTML += `<option value="${v}">${v}</option>`; });
         [...new Set(products.map(p => p[14]?.trim()).filter(v => v))].forEach(v => { document.getElementById('tagFilter').innerHTML += `<option value="${v}">${v}</option>`; });
+        updateL2();
     }
 
-    function updateL2() { const l1 = document.getElementById('l1Filter').value; const s = document.getElementById('l2Filter'); s.innerHTML = '<option value="">二级类目(全部)</option>'; [...new Set(products.filter(p => !l1 || p[5] === l1).map(p => p[6]))].forEach(v => { if(v) s.innerHTML += `<option value="${v}">${v}</option>`; }); }
+    function updateL2() { const l1 = document.getElementById('l1Filter').value; const s = document.getElementById('l2Filter'); s.innerHTML = '<option value="">三级类目(全部)</option>'; [...new Set(products.filter(p => !l1 || p[5] === l1).map(p => p[6]))].forEach(v => { if(v) s.innerHTML += `<option value="${v}">${v}</option>`; }); }
     let timer; const debouncedFilter = () => { clearTimeout(timer); timer = setTimeout(applyFilters, 300); };
     window.onload = loadData;
     // Data-Powered Template | Author: Ethan Cai (ethan.cai02@shopee.com)
