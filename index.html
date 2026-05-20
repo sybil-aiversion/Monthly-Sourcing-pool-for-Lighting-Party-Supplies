@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>6月灯具&派对用品寻品</title>
+    <title>6月灯具&派对用品寻品表</title>
     <style>
         body { font-family: 'PingFang SC', sans-serif; background: #f4f4f7; color: #333; margin: 0; padding: 20px; }
         .container { max-width: 1200px; margin: 0 auto; }
@@ -34,18 +34,20 @@
 <body>
 <div class="container">
     <header>
-        <h1>6月灯具&派对用品寻品</h1>
+        <h1>6月灯具&派对用品寻品表</h1>
         <div class="desc-box">
-            🔥优先选P0：P0 级产品价格更优
-            💰高效提报：单击红框 ID 快速复制，搜索该 ID 报满所有型号流量翻倍！
-            💹价格有问题： 点击左上角P0查看核价链接，联系买手申诉。</div>
+🔥优先选P0：P0 级产品价格更优
+💰高效提报：单击红框 ID 快速复制，搜索该 ID 报满所有型号流量翻倍！
+💹价格有问题： 点击左上角P0/P1查看核价链接，联系买手申诉。</div>
     </header>
+    
     <div class="filter-section">
         <input type="text" id="searchInput" placeholder="搜索标题/ID..." oninput="debouncedFilter()">
+        
         <select id="l1Filter" onchange="updateL2(); applyFilters()"><option value="">二级类目(全部)</option></select>
         <select id="l2Filter" onchange="applyFilters()"><option value="">三级类目(全部)</option></select>
-        <select id="pFilter" onchange="applyFilters()"><option value="">P0/P1(全部)</option><option value="P0">P0</option><option value="P1">P1</option></select>
         
+        <select id="pFilter" onchange="applyFilters()"><option value="">P0/P1(全部)</option><option value="P0">P0</option><option value="P1">P1</option></select>
         <select id="tagFilter" onchange="applyFilters()"><option value="">销售优先级(全部)</option></select>
         
         <select id="highPriceFilter" onchange="applyFilters()">
@@ -53,13 +55,11 @@
             <option value="是">是</option>
             <option value="否">否</option>
         </select>
-        
         <select id="heavyCargoFilter" onchange="applyFilters()">
             <option value="">是否为重抛货(全部)</option>
             <option value="是">是</option>
             <option value="否">否</option>
         </select>
-        
         <select id="focusRecruitFilter" onchange="applyFilters()">
             <option value="">是否重点招募(全部)</option>
             <option value="是">是</option>
@@ -75,12 +75,15 @@
         </select>
         <span id="countDisplay" style="font-weight:bold; color:#ee4d2d; margin-left:auto;"></span>
     </div>
+
     <div class="product-grid" id="productGrid"></div>
     <div style="margin:20px; text-align:center;" id="pagination"></div>
 </div>
+
 <div id="imageModal" onclick="this.style.display='none'"><img id="modalImg" src=""></div>
 
 <script>
+    // 基础防窥安全策略
     document.oncontextmenu = () => false;
     document.onkeydown = (e) => {
         if (e.keyCode === 123 || (e.ctrlKey && e.shiftKey && e.keyCode === 73) || (e.ctrlKey && e.keyCode === 85)) {
@@ -88,28 +91,39 @@
         }
     };
 
+    console.log("%c⚠️ 发现非法查看源码行为", "color: red; font-size: 20px; font-weight: bold;");
+    console.log("Designed by Ethan Cai. 复制前请联系原作者。");
+
     let products = [], filteredData = [], currentPage = 1;
     const pageSize = 40;
-    
+
+    // 清洗 ID 格式
     const cleanId = (str) => {
         if (!str) return "";
         return str.toString().replace(/^['+]+/, '').replace(/["=\t]/g, '').trim();
     };
 
+    // 数据加载器
     async function loadData() {
         try {
             const res = await fetch('data.csv');
             const text = await res.text();
             products = text.split(/\r?\n/).slice(1).map((line, index) => {
                 let r = [], cur = '', q = false;
-                for (let c of line) { if (c === '"') q = !q; else if (c === ',' && !q) { r.push(cur.trim()); cur = ''; } else cur += c; }
+                for (let c of line) { 
+                    if (c === '"') q = !q; 
+                    else if (c === ',' && !q) { r.push(cur.trim()); cur = ''; } 
+                    else cur += c; 
+                }
                 r.push(cur.trim()); r.push(index);
                 return r;
             }).filter(a => a.length >= 12);
-            initFilters(); applyFilters();
+            initFilters(); 
+            applyFilters();
         } catch (e) { console.error(e); }
     }
 
+    // 1688 链接提取器
     function checkLink(rawUrl) {
         if (!rawUrl) { alert('❌ 无核价链接'); return; }
         const match = rawUrl.match(/https?:\/\/[^\s]+/);
@@ -120,6 +134,7 @@
         }
     }
 
+    // 映射表格各列的索引对应关系
     const mapData = (arr) => {
         return {
             title: arr[0],
@@ -127,25 +142,27 @@
             price: parseFloat(arr[2]) || 0,
             imgUrl: arr[3],
             link: arr[4],
-            l1: arr[5],
-            l2: arr[6],
+            l1: arr[5],          // 二级类目
+            l2: arr[6],          // 三级类目
             inviteId: cleanId(arr[7]),
             modelId: cleanId(arr[8]), 
             link1688: arr[9],
             judge: arr[10],
             date: arr[11],
-            specialTag: arr[14] || "", // 第15列
-            modelCount: arr[15] || "1",
-            highPrice: arr[16] ? arr[16].toString().trim() : "",    // 第17列 
-            heavyCargo: arr[17] ? arr[17].toString().trim() : "",  // 第18列
-            focusRecruit: arr[18] ? arr[18].toString().trim() : "" // 第19列
+            specialTag: arr[14] || "",       // 销售优先级（第15列）
+            modelCount: arr[15] || "1",      // 商品款数（第16列）
+            highPrice: arr[16] || "否",      // 是否有高价品加投资源（第17列）
+            heavyCargo: arr[17] || "否",     // 是否为重抛货（第18列）
+            focusRecruit: arr[18] || "否"    // 是否重点招募（第19列）
         };
     };
 
+    // 页面列表渲染
     function render(dataList, page = 1) {
         currentPage = page;
         const grid = document.getElementById('productGrid');
         grid.innerHTML = '';
+        
         dataList.slice((page - 1) * pageSize, page * pageSize).forEach(arr => {
             const item = mapData(arr);
             const card = document.createElement('div');
@@ -177,6 +194,7 @@
         renderPagination(dataList.length);
     }
 
+    // 分页计算器
     function renderPagination(total) {
         const totalPages = Math.ceil(total / pageSize);
         const p = document.getElementById('pagination');
@@ -189,50 +207,98 @@
     }
 
     function changePage(delta) { render(filteredData, currentPage + delta); }
+    
     function jumpToPage() {
         const p = parseInt(document.getElementById('jumpPage').value);
         if(p > 0 && p <= Math.ceil(filteredData.length/pageSize)) render(filteredData, p);
     }
 
+    // 筛选过滤器核心逻辑
     function applyFilters() {
-        const q = document.getElementById('searchInput').value.toLowerCase();
-        const l1 = document.getElementById('l1Filter').value, l2 = document.getElementById('l2Filter').value;
-        const p = document.getElementById('pFilter').value, tag = document.getElementById('tagFilter').value;
+        const q = document.getElementById('searchInput').value.toLowerCase().trim();
+        const l1 = document.getElementById('l1Filter').value.trim();
+        const l2 = document.getElementById('l2Filter').value.trim();
+        const p = document.getElementById('pFilter').value.trim();
+        const tag = document.getElementById('tagFilter').value.trim();
         
-        // 获取新筛选框的值
-        const hPrice = document.getElementById('highPriceFilter').value;
-        const hCargo = document.getElementById('heavyCargoFilter').value;
-        const fRecruit = document.getElementById('focusRecruitFilter').value;
+        const hPrice = document.getElementById('highPriceFilter').value.trim();
+        const hCargo = document.getElementById('heavyCargoFilter').value.trim();
+        const fRecruit = document.getElementById('focusRecruitFilter').value.trim();
         
-        const min = parseFloat(document.getElementById('minPrice').value) || 0, max = parseFloat(document.getElementById('maxPrice').value) || Infinity;
+        const min = parseFloat(document.getElementById('minPrice').value) || 0;
+        const max = parseFloat(document.getElementById('maxPrice').value) || Infinity;
         
         filteredData = products.filter(arr => {
             const i = mapData(arr);
-            return (i.title.toLowerCase().includes(q) || i.inviteId.toLowerCase().includes(q)) &&
-                   (!l1 || i.l1 === l1) && (!l2 || i.l2 === l2) && (!p || i.judge === p) && 
-                   (!tag || i.specialTag === tag) && 
-                   (!hPrice || i.highPrice === hPrice) &&
-                   (!hCargo || i.heavyCargo === hCargo) &&
-                   (!fRecruit || i.focusRecruit === fRecruit) &&
-                   (i.price >= min && i.price <= max);
+            
+            const matchQuery = !q || (i.title && i.title.toLowerCase().includes(q)) || (i.inviteId && i.inviteId.toLowerCase().includes(q));
+            const matchL1 = !l1 || (i.l1 && i.l1.trim() === l1);
+            const matchL2 = !l2 || (i.l2 && i.l2.trim() === l2);
+            const matchP = !p || (i.judge && i.judge.trim() === p);
+            const matchTag = !tag || (i.specialTag && i.specialTag.trim() === tag);
+            
+            const matchHPrice = !hPrice || (i.highPrice && i.highPrice.trim() === hPrice);
+            const matchHCargo = !hCargo || (i.heavyCargo && i.heavyCargo.trim() === hCargo);
+            const matchFRecruit = !fRecruit || (i.focusRecruit && i.focusRecruit.trim() === fRecruit);
+            const matchPrice = i.price >= min && i.price <= max;
+            
+            return matchQuery && matchL1 && matchL2 && matchP && matchTag && matchHPrice && matchHCargo && matchFRecruit && matchPrice;
         });
         
         const sort = document.getElementById('sortOrder').value;
-        if (sort === 'priceAsc') filteredData.sort((a,b) => a[2] - b[2]);
-        else if (sort === 'priceDesc') filteredData.sort((a,b) => b[2] - a[2]);
+        if (sort === 'priceAsc') filteredData.sort((a,b) => (parseFloat(a[2]) || 0) - (parseFloat(b[2]) || 0));
+        else if (sort === 'priceDesc') filteredData.sort((a,b) => (parseFloat(b[2]) || 0) - (parseFloat(a[2]) || 0));
         
         document.getElementById('countDisplay').innerText = `已筛选：${filteredData.length} 款`;
         render(filteredData, 1);
     }
 
+    // 动态提取表格中的类目选项并填充到下拉菜单中
     function initFilters() {
-        [...new Set(products.map(p => p[5]))].forEach(v => { if(v) document.getElementById('l1Filter').innerHTML += `<option value="${v}">${v}</option>`; });
-        [...new Set(products.map(p => p[14]?.trim()).filter(v => v))].forEach(v => { document.getElementById('tagFilter').innerHTML += `<option value="${v}">${v}</option>`; });
+        const l1Select = document.getElementById('l1Filter');
+        l1Select.innerHTML = '<option value="">二级类目(全部)</option>';
+        [...new Set(products.map(p => p[5]).filter(v => v))].forEach(v => {
+            l1Select.innerHTML += `<option value="${v}">${v}</option>`;
+        });
+
+        const tagSelect = document.getElementById('tagFilter');
+        tagSelect.innerHTML = '<option value="">销售优先级(全部)</option>';
+        [...new Set(products.map(p => p[14]?.trim()).filter(v => v))].forEach(v => {
+            tagSelect.innerHTML += `<option value="${v}">${v}</option>`;
+        });
+
+        updateL2();
     }
 
-    function updateL2() { const l1 = document.getElementById('l1Filter').value; const s = document.getElementById('l2Filter'); s.innerHTML = '<option value="">三级类目(全部)</option>'; [...new Set(products.filter(p => !l1 || p[5] === l1).map(p => p[6]))].forEach(v => { if(v) s.innerHTML += `<option value="${v}">${v}</option>`; }); }
-    let timer; const debouncedFilter = () => { clearTimeout(timer); timer = setTimeout(applyFilters, 300); };
+    // 二三级类目智能联动匹配逻辑
+    function updateL2() {
+        const l1Value = document.getElementById('l1Filter').value;
+        const s = document.getElementById('l2Filter');
+        
+        s.innerHTML = '<option value="">三级类目(全部)</option>';
+        
+        const availableL2 = [...new Set(
+            products
+            .filter(p => p && (!l1Value || (p[5] && p[5].trim() === l1Value.trim())))
+            .map(p => p[6] ? p[6].trim() : "")
+            .filter(v => v)
+        )];
+
+        availableL2.forEach(v => {
+            s.innerHTML += `<option value="${v}">${v}</option>';
+        });
+    }
+
+    // 输入框防抖
+    let timer; 
+    const debouncedFilter = () => { clearTimeout(timer); timer = setTimeout(applyFilters, 300); };
+    
     window.onload = loadData;
 </script>
+
+<footer style="text-align: center; color: #86868b; font-size: 11px; margin-top: 80px; padding: 40px; letter-spacing: 0.5px; font-family: -apple-system, BlinkMacSystemFont, sans-serif;">
+    <div style="margin-bottom: 4px;">Designed by Ethan Cai</div>
+    <div style="opacity: 0.8;">ethan.cai02@shopee.com</div>
+</footer>
 </body>
 </html>
