@@ -29,8 +29,6 @@
         .footer-row { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #999; border-top: 1px solid #eee; padding-top: 10px; margin-top: auto; }
         .btn-link { color: #0056b3; font-weight: bold; text-decoration: none; }
         #imageModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center; cursor: zoom-out; }
-        button { padding: 6px 12px; background: #fff; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; }
-        button:disabled { background: #f5f5f5; color: #ccc; cursor: not-allowed; }
     </style>
 </head>
 <body>
@@ -83,7 +81,7 @@
     <div style="margin:20px; text-align:center;" id="pagination"></div>
 </div>
 
-<div id="imageModal" onclick="this.style.display='none'"><img id="modalImg" src="" style="max-width:90%; max-height:90%;"></div>
+<div id="imageModal" onclick="this.style.display='none'"><img id="modalImg" src=""></div>
 
 <script>
     // 基础安全策略（防常规快捷键查看源码）
@@ -103,48 +101,25 @@
         return str.toString().replace(/^['+]+/, '').replace(/["=\t]/g, '').trim();
     };
 
-    // 🎯 优化后的 CSV 安全数据异步加载逻辑
+    // 数据异步加载逻辑
     async function loadData() {
         try {
             const res = await fetch('data.csv');
             const text = await res.text();
-            
-            // 按行切分
-            const lines = text.split(/\r?\n/);
-            products = [];
-
-            // 从第二行（索引1）开始解析，跳过表头
-            for (let i = 1; i < lines.length; i++) {
-                const line = lines[i].trim();
-                if (!line) continue;
-
-                // 使用正则表达式完美切分 CSV 字段，兼容引号与逗号冲突问题
-                const r = [];
-                const matches = line.match(/("([^"]*)"|[^,]*)(?=,|$)/g);
-                
-                if (matches) {
-                    matches.forEach(m => {
-                        let field = m.trim();
-                        if (field.startsWith('"') && field.endsWith('"')) {
-                            field = field.slice(1, -1).trim(); // 去除外层包裹的双引号
-                        }
-                        r.push(field);
-                    });
+            products = text.split(/\r?\n/).slice(1).map((line, index) => {
+                let r = [], cur = '', q = false;
+                for (let c of line) { 
+                    if (c === '"') q = !q; 
+                    else if (c === ',' && !q) { r.push(cur.trim()); cur = ''; } 
+                    else cur += c; 
                 }
-
-                if (r.length > 0) {
-                    r.push(i); // 塞入原始索引，保持与你原有逻辑一致
-                    if (r.length >= 11) {
-                        products.push(r);
-                    }
-                }
-            }
+                r.push(cur.trim()); r.push(index);
+                return r;
+            }).filter(a => a.length >= 11); // 保证基础列完整
             
             initFilters(); 
             applyFilters();
-        } catch (e) { 
-            console.error("CSV数据解析失败，请检查文件格式:", e); 
-        }
+        } catch (e) { console.error(e); }
     }
 
     // 1688 链接快速跳转
@@ -158,30 +133,30 @@
         }
     }
 
-    // 根据实际导出的 data.csv 表头进行完美索引分配
+    // 🎯 根据实际导出的 data.csv 表头进行完美索引分配
     const mapData = (arr) => {
         return {
-            title: arr[0] || "暂无名称",          // A列: item name
-            variant: arr[1] || "",               // B列: model name
-            price: parseFloat(arr[2]) || 0,      // C列: price
-            imgUrl: arr[3] || "",                // D列: image url 
-            link: arr[4] || "",                  // E列: product link
-            l1: arr[5] || "",                    // F列: 二级类目
-            l2: arr[6] || "",                    // G列: 三级类目
-            inviteId: cleanId(arr[7]),           // H列: 邀请码
-            modelId: cleanId(arr[8]),            // I列: model id
-            link1688: arr[9] || "",              // J列: final_1688
-            judge: arr[10] || "P1",              // K列: price judg
-            specialTag: arr[11] || "",           // L列: 销售优先级
+            title: arr[0],               // A列: item name
+            variant: arr[1] || "",       // B列: model name
+            price: parseFloat(arr[2]) || 0, // C列: price
+            imgUrl: arr[3] || "",        // D列: image url 
+            link: arr[4] || "",          // E列: product link
+            l1: arr[5] || "",            // F列: 二级类目
+            l2: arr[6] || "",            // G列: 三级类目
+            inviteId: cleanId(arr[7]),   // H列: 邀请码
+            modelId: cleanId(arr[8]),    // I列: model id
+            link1688: arr[9] || "",      // J列: final_1688
+            judge: arr[10] || "P1",      // K列: price judg
+            specialTag: arr[11] || "",   // L列: 销售优先级
             
-            modelCount: arr[15] || "1",          // P列: 该款式有几款
-            highPrice: arr[16] || "否",          // Q列: 是否有高价品...
-            heavyCargo: arr[17] || "否",         // R列: 是否为重抛货
-            focusRecruit: arr[18] || "否"         // S列: 是否重点招募
+            modelCount: arr[15] || "1",  // P列: 该款式有几款
+            highPrice: arr[16] || "否",  // Q列: 是否有高价品...
+            heavyCargo: arr[17] || "否", // R列: 是否为重抛货
+            focusRecruit: arr[18] || "否"// S列: 是否重点招募
         };
     };
 
-    // 卡片前端渲染
+    // 卡片前端渲染渲染
     function render(dataList, page = 1) {
         currentPage = page;
         const grid = document.getElementById('productGrid');
@@ -193,10 +168,7 @@
             return;
         }
 
-        const start = (page - 1) * pageSize;
-        const end = page * pageSize;
-
-        dataList.slice(start, end).forEach(arr => {
+        dataList.slice((page - 1) * pageSize, page * pageSize).forEach(arr => {
             const item = mapData(arr);
             const card = document.createElement('div');
             card.className = 'card';
@@ -204,7 +176,7 @@
                 <div class="judge-tag ${item.judge === 'P0' ? 'bg-p0' : 'bg-p1'}" onclick="checkLink('${item.link1688}')">${item.judge}</div>
                 ${item.specialTag ? `<div class="special-tag">${item.specialTag}</div>` : ''}
                 <div class="img-container" ondblclick="document.getElementById('modalImg').src='${item.imgUrl}'; document.getElementById('imageModal').style.display='flex';">
-                    <img src="${item.imgUrl}" loading="lazy" onerror="this.onerror=null; this.src='https://via.placeholder.com/220?text=暂无图片'">
+                    <img src="${item.imgUrl}" loading="lazy" onerror="this.src='https://via.placeholder.com/220?text=暂无图片'">
                 </div>
                 <div class="info">
                     <div class="title" title="${item.title}">${item.title}</div>
@@ -226,37 +198,24 @@
         renderPagination(dataList.length);
     }
 
-    // 分页计算与渲染
+    // 分页计算
     function renderPagination(total) {
-        const totalPages = Math.ceil(total / pageSize) || 1;
+        const totalPages = Math.ceil(total / pageSize);
         const p = document.getElementById('pagination');
         if (total === 0) { p.innerHTML = ''; return; }
         p.innerHTML = `
-            <button onclick="changePage(-1)" ${currentPage === 1 ? 'disabled' : ''}>上一页</button>
-            <span style="margin:0 10px;">${currentPage} / ${totalPages}</span>
-            <button onclick="changePage(1)" ${currentPage >= totalPages ? 'disabled' : ''}>下一页</button>
-            <input type="number" id="jumpPage" style="width:50px; margin-left:10px;" placeholder="页码" min="1" max="${totalPages}">
+            <button onclick="changePage(-1)" ${currentPage===1?'disabled':''}>上一页</button>
+            <span style="margin:0 10px;">${currentPage}/${totalPages || 1}</span>
+            <button onclick="changePage(1)" ${currentPage>=totalPages?'disabled':''}>下一页</button>
+            <input type="number" id="jumpPage" style="width:50px; margin-left:10px;" placeholder="页码">
             <button onclick="jumpToPage()">跳转</button>`;
     }
 
-    function changePage(delta) { 
-        const totalPages = Math.ceil(filteredData.length / pageSize) || 1;
-        const targetPage = currentPage + delta;
-        if (targetPage >= 1 && targetPage <= totalPages) {
-            render(filteredData, targetPage); 
-            window.scrollTo({top: 0, behavior: 'smooth'}); // 切换页面后自动回到顶部
-        }
-    }
+    function changePage(delta) { render(filteredData, currentPage + delta); }
     
     function jumpToPage() {
         const p = parseInt(document.getElementById('jumpPage').value);
-        const totalPages = Math.ceil(filteredData.length / pageSize) || 1;
-        if (p >= 1 && p <= totalPages) {
-            render(filteredData, p);
-            window.scrollTo({top: 0, behavior: 'smooth'});
-        } else {
-            alert(`请输入 1 到 ${totalPages} 之间的有效页码`);
-        }
+        if(p > 0 && p <= Math.ceil(filteredData.length/pageSize)) render(filteredData, p);
     }
 
     // 核心联动筛选机制
