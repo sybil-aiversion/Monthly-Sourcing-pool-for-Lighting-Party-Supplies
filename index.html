@@ -2,17 +2,18 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>10月灯具&派对用品&寝具寻品表</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>11月灯具&派对用品&寝具寻品表</title>
     <style>
         body { font-family: 'PingFang SC', sans-serif; background: #f4f4f7; color: #333; margin: 0; padding: 20px; }
         .container { max-width: 1200px; margin: 0 auto; }
         header { background: #ee4d2d; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
-        .desc-box { background: rgba(255,255,255,0.2); padding: 10px; margin-top: 10px; border-radius: 4px; font-size: 14px; line-height: 1.6; }
+        .desc-box { background: rgba(255,255,255,0.2); padding: 10px 14px; margin-top: 10px; border-radius: 4px; font-size: 14px; line-height: 1.8; }
         .filter-section { background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         input, select { padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
         .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
         .card { background: white; border-radius: 8px; overflow: hidden; border: 1px solid #eee; transition: 0.3s; position: relative; display: flex; flex-direction: column; }
-        .judge-tag { position: absolute; top: 10px; left: 10px; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .judge-tag { position: absolute; top: 10px; left: 10px; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .bg-p0 { background: #d4edda; color: #155724; }
         .bg-p1 { background: #d1ecf1; color: #0c5460; }
         .special-tag { position: absolute; top: 10px; right: 10px; background: linear-gradient(90deg, #ff7a18, #e52e71); color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; z-index: 10; }
@@ -34,36 +35,38 @@
 <body>
 <div class="container">
     <header>
-        <h1>10月灯具&派对用品&寝具寻品表</h1>
+        <h1>11月灯具&派对用品&寝具寻品表</h1>
         <div class="desc-box">
-            🔥优先选P0：P0 级产品价格更优
-            💰高效提报：单击红框 ID 快速复制，搜索该 ID 报满所有型号流量翻倍！
-            💹价格有问题： 点击左上角P0查看核价链接，联系买手申诉。
+            ① 平台近期重点做定向寻品，跟卖审核快、上架快、投流更多<br>
+            ② 单击红框ID可直接复制邀请码，搜索该ID报满所有型号出单更好<br>
+            ③ 价格有问题：点击下方原品可跳转原链接
         </div>
     </header>
-    
+
     <div class="filter-section">
         <input type="text" id="searchInput" placeholder="搜索标题/ID..." oninput="debouncedFilter()">
-        
+
         <select id="l1Filter" onchange="updateL2(); applyFilters()"><option value="">二级类目(全部)</option></select>
         <select id="l2Filter" onchange="updateL3(); applyFilters()"><option value="">三级类目(全部)</option></select>
-        <select id="l3Filter" onchange="applyFilters()"><option value="">四级类目(全部)</option></select>
-        
-        <select id="pFilter" onchange="applyFilters()"><option value="">P0/P1(全部)</option><option value="P0">P0</option><option value="P1">P1</option></select>
+        <select id="l3Filter" onchange="updateL4(); applyFilters()"><option value="">四级类目(全部)</option></select>
+        <select id="l4Filter" onchange="applyFilters()"><option value="">五级类目(全部)</option></select>
+
+        <select id="siteFilter" onchange="applyFilters()"><option value="">原畅销站点(全部)</option></select>
+
+        <select id="pFilter" onchange="applyFilters()">
+            <option value="">价格友好度(全部)</option>
+            <option value="P0">P0</option>
+            <option value="P1">P1</option>
+        </select>
         <select id="tagFilter" onchange="applyFilters()"><option value="">销售优先级(全部)</option></select>
-        
+
         <select id="highPriceFilter" onchange="applyFilters()">
-            <option value="">是否有高价品加投资源(全部)</option>
+            <option value="">是否高价品（有资源加投）(全部)</option>
             <option value="是">是</option>
             <option value="否">否</option>
         </select>
         <select id="heavyCargoFilter" onchange="applyFilters()">
-            <option value="">是否为重抛货(全部)</option>
-            <option value="是">是</option>
-            <option value="否">否</option>
-        </select>
-        <select id="focusRecruitFilter" onchange="applyFilters()">
-            <option value="">是否重点招募(全部)</option>
+            <option value="">是否重抛货（价格更好）(全部)</option>
             <option value="是">是</option>
             <option value="否">否</option>
         </select>
@@ -93,7 +96,7 @@
         }
     };
 
-    let products = [], filteredData = [], currentPage = 1;
+    let items = [], filteredData = [], currentPage = 1;
     const pageSize = 40;
 
     // 清洗 ID 格式
@@ -102,231 +105,264 @@
         return str.toString().replace(/^['+]+/, '').replace(/["=\t]/g, '').trim();
     };
 
-    // 数据异步加载逻辑
+    // HTML 转义（防止标题/链接里的引号破坏页面）
+    const esc = (s) => String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+    // 解析单行 CSV（支持引号、转义引号）
+    function parseCsvLine(line) {
+        const r = []; let cur = '', q = false;
+        for (let i = 0; i < line.length; i++) {
+            const c = line[i];
+            if (c === '"') {
+                if (q && line[i + 1] === '"') { cur += '"'; i++; }
+                else q = !q;
+            } else if (c === ',' && !q) { r.push(cur.trim()); cur = ''; }
+            else cur += c;
+        }
+        r.push(cur.trim());
+        return r;
+    }
+
+    // 按表头名称取列（同名列取第一个）
+    function buildHeaderIndex(headerRow) {
+        const idx = {};
+        headerRow.forEach((h, i) => {
+            const name = h.replace(/^\uFEFF/, '').trim();
+            if (name && !(name in idx)) idx[name] = i;
+        });
+        return idx;
+    }
+
+    // 在表头中按关键字查找列索引（先精确，后包含）
+    function findCol(idx, ...names) {
+        for (const n of names) if (n in idx) return idx[n];
+        for (const n of names) {
+            const k = Object.keys(idx).find(key => key.includes(n));
+            if (k !== undefined) return idx[k];
+        }
+        return -1;
+    }
+
+    // 数据异步加载
     async function loadData() {
         try {
             const res = await fetch('data.csv');
             const text = await res.text();
-            products = text.split(/\r?\n/).slice(1).map((line, index) => {
-                let r = [], cur = '', q = false;
-                for (let c of line) { 
-                    if (c === '"') q = !q; 
-                    else if (c === ',' && !q) { r.push(cur.trim()); cur = ''; } 
-                    else cur += c; 
-                }
-                r.push(cur.trim()); r.push(index);
-                return r;
-            }).filter(a => a.length >= 20); // 保证基础列完整（新表头共20列）
-            
-            initFilters(); 
+            const lines = text.split(/\r?\n/).filter(l => l.trim() !== '');
+            const header = parseCsvLine(lines[0]);
+            const idx = buildHeaderIndex(header);
+
+            const col = {
+                title: findCol(idx, 'item name中文', 'item name'),
+                variant: findCol(idx, 'model name中文', 'model name'),
+                price: findCol(idx, 'price'),
+                imgUrl: findCol(idx, 'image url'),
+                link: findCol(idx, 'product link'),
+                l1: findCol(idx, '二级类目'),
+                l2: findCol(idx, '三级类目'),
+                l3: findCol(idx, '四级类目'),
+                l4: findCol(idx, '五级类目'),
+                inviteId: findCol(idx, '邀请码'),
+                modelId: findCol(idx, 'model id'),
+                judge: findCol(idx, 'price judge'),
+                specialTag: findCol(idx, '销售优先级'),
+                modelCount: findCol(idx, '该款式有sku数', 'sku数'),
+                highPrice: findCol(idx, '是否有高价品加投资源', '是否高价品'),
+                heavyCargo: findCol(idx, '是否为重抛货', '是否重抛货'),
+                site: findCol(idx, '原畅销站点', '畅销站点')
+            };
+
+            Object.keys(col).forEach(k => {
+                if (col[k] === -1) console.warn('data.csv 中未找到列：', k);
+            });
+
+            const get = (row, k) => (col[k] >= 0 ? (row[col[k]] || '') : '');
+
+            items = lines.slice(1).map(line => {
+                const row = parseCsvLine(line);
+                return {
+                    title: get(row, 'title'),
+                    variant: get(row, 'variant'),
+                    price: parseFloat(get(row, 'price')) || 0,
+                    imgUrl: get(row, 'imgUrl'),
+                    link: get(row, 'link'),
+                    l1: get(row, 'l1').trim(),
+                    l2: get(row, 'l2').trim(),
+                    l3: get(row, 'l3').trim(),
+                    l4: get(row, 'l4').trim(),
+                    inviteId: cleanId(get(row, 'inviteId')),
+                    modelId: cleanId(get(row, 'modelId')),
+                    judge: get(row, 'judge') || 'P1',
+                    specialTag: get(row, 'specialTag').trim(),
+                    modelCount: get(row, 'modelCount') || '1',
+                    highPrice: get(row, 'highPrice') || '否',
+                    heavyCargo: get(row, 'heavyCargo') || '否',
+                    site: get(row, 'site').trim()
+                };
+            }).filter(i => i.title);
+
+            initFilters();
             applyFilters();
         } catch (e) { console.error(e); }
     }
 
-    // 1688 链接快速跳转
-    function checkLink(rawUrl) {
-        if (!rawUrl) { alert('❌ 无核价链接'); return; }
-        const match = rawUrl.match(/https?:\/\/[^\s]+/);
-        if (match) {
-            window.open(match[0], '_blank');
-        } else {
-            alert('❌ 链接格式无法识别');
-        }
-    }
-
-    // 🎯 根据新版 data.csv 表头重新对应列索引
-    // 0 item name中文 | 1 model name中文 | 2 price | 3 image url | 4 product link
-    // 5 二级类目 | 6 三级类目 | 7 四级类目 | 8 邀请码 | 9 model id
-    // 10 final_1688_link | 11 price judge | 12 销售优先级 | 13 itemid | 14 最大价格
-    // 15 销售优先级(重复) | 16 该款式有sku数 | 17 是否有高价品加投资源 | 18 是否为重抛货 | 19 是否重点招募
-    const mapData = (arr) => {
-        return {
-            title: arr[0],               // A列: item name
-            variant: arr[1] || "",       // B列: model name
-            price: parseFloat(arr[2]) || 0, // C列: price
-            imgUrl: arr[3] || "",        // D列: image url 
-            link: arr[4] || "",          // E列: product link
-            l1: arr[5] || "",            // F列: 二级类目
-            l2: arr[6] || "",            // G列: 三级类目
-            l3: arr[7] || "",            // H列: 四级类目（新增）
-            inviteId: cleanId(arr[8]),   // I列: 邀请码
-            modelId: cleanId(arr[9]),    // J列: model id
-            link1688: arr[10] || "",     // K列: final_1688
-            judge: arr[11] || "P1",      // L列: price judge
-            specialTag: arr[12] || "",   // M列: 销售优先级
-
-            modelCount: arr[16] || "1",  // Q列: 该款式有几款
-            highPrice: arr[17] || "否",  // R列: 是否有高价品...
-            heavyCargo: arr[18] || "否", // S列: 是否为重抛货
-            focusRecruit: arr[19] || "否"// T列: 是否重点招募
-        };
-    };
-
-    // 卡片前端渲染渲染
+    // 卡片渲染
     function render(dataList, page = 1) {
         currentPage = page;
         const grid = document.getElementById('productGrid');
         grid.innerHTML = '';
-        
+
         if (dataList.length === 0) {
             grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #999; padding: 40px;">⚠️ 没有找到任何匹配的商品，请清除当前筛选条件重试</div>';
             renderPagination(0);
             return;
         }
 
-        dataList.slice((page - 1) * pageSize, page * pageSize).forEach(arr => {
-            const item = mapData(arr);
+        dataList.slice((page - 1) * pageSize, page * pageSize).forEach(item => {
             const card = document.createElement('div');
             card.className = 'card';
             card.innerHTML = `
-                <div class="judge-tag ${item.judge === 'P0' ? 'bg-p0' : 'bg-p1'}" onclick="checkLink('${item.link1688}')">${item.judge}</div>
-                ${item.specialTag ? `<div class="special-tag">${item.specialTag}</div>` : ''}
-                <div class="img-container" ondblclick="document.getElementById('modalImg').src='${item.imgUrl}'; document.getElementById('imageModal').style.display='flex';">
-                    <img src="${item.imgUrl}" loading="lazy" onerror="this.src='https://via.placeholder.com/220?text=暂无图片'">
+                <div class="judge-tag ${item.judge === 'P0' ? 'bg-p0' : 'bg-p1'}" title="价格友好度">${esc(item.judge)}</div>
+                ${item.specialTag ? `<div class="special-tag">${esc(item.specialTag)}</div>` : ''}
+                <div class="img-container" data-img="${esc(item.imgUrl)}">
+                    <img src="${esc(item.imgUrl)}" loading="lazy" onerror="this.src='https://via.placeholder.com/220?text=暂无图片'">
                 </div>
                 <div class="info">
-                    <div class="title" title="${item.title}">${item.title}</div>
+                    <div class="title" title="${esc(item.title)}">${esc(item.title)}</div>
                     <div class="price-variant-row">
-                        <span class="price">¥${item.price}</span>
-                        <span class="variant" title="${item.variant}">${item.variant}</span>
+                        <span class="price">¥${esc(item.price)}</span>
+                        <span class="variant" title="${esc(item.variant)}">${esc(item.variant)}</span>
                     </div>
                     <div class="invite-row">
-                        <div class="model-count-tag">${item.modelCount}</div>
-                        <div class="invite-id-box" onclick="navigator.clipboard.writeText('${item.inviteId}'); alert('已复制ID: ${item.inviteId}')">${item.inviteId}</div>
+                        <div class="model-count-tag">${esc(item.modelCount)}</div>
+                        <div class="invite-id-box" data-id="${esc(item.inviteId)}">${esc(item.inviteId)}</div>
                     </div>
                     <div class="footer-row">
-                        <span style="font-weight:bold; color:#555;">${item.modelId}</span>
-                        <a href="${item.link}" target="_blank" class="btn-link">原品 >>></a>
+                        <span style="font-weight:bold; color:#555;">${esc(item.modelId)}</span>
+                        <a href="${esc(item.link)}" target="_blank" class="btn-link">原品 >>></a>
                     </div>
                 </div>`;
+
+            // 双击放大图片
+            card.querySelector('.img-container').addEventListener('dblclick', function () {
+                document.getElementById('modalImg').src = this.dataset.img;
+                document.getElementById('imageModal').style.display = 'flex';
+            });
+            // 单击复制邀请码
+            card.querySelector('.invite-id-box').addEventListener('click', function () {
+                const id = this.dataset.id;
+                navigator.clipboard.writeText(id).then(() => alert('已复制ID: ' + id));
+            });
+
             grid.appendChild(card);
         });
         renderPagination(dataList.length);
     }
 
-    // 分页计算
+    // 分页
     function renderPagination(total) {
         const totalPages = Math.ceil(total / pageSize);
         const p = document.getElementById('pagination');
         if (total === 0) { p.innerHTML = ''; return; }
         p.innerHTML = `
-            <button onclick="changePage(-1)" ${currentPage===1?'disabled':''}>上一页</button>
+            <button onclick="changePage(-1)" ${currentPage === 1 ? 'disabled' : ''}>上一页</button>
             <span style="margin:0 10px;">${currentPage}/${totalPages || 1}</span>
-            <button onclick="changePage(1)" ${currentPage>=totalPages?'disabled':''}>下一页</button>
+            <button onclick="changePage(1)" ${currentPage >= totalPages ? 'disabled' : ''}>下一页</button>
             <input type="number" id="jumpPage" style="width:50px; margin-left:10px;" placeholder="页码">
             <button onclick="jumpToPage()">跳转</button>`;
     }
 
     function changePage(delta) { render(filteredData, currentPage + delta); }
-    
+
     function jumpToPage() {
         const p = parseInt(document.getElementById('jumpPage').value);
-        if(p > 0 && p <= Math.ceil(filteredData.length/pageSize)) render(filteredData, p);
+        if (p > 0 && p <= Math.ceil(filteredData.length / pageSize)) render(filteredData, p);
     }
 
-    // 核心联动筛选机制
+    // 核心筛选
     function applyFilters() {
-        const q = document.getElementById('searchInput').value.toLowerCase().trim();
-        const l1 = document.getElementById('l1Filter').value.trim();
-        const l2 = document.getElementById('l2Filter').value.trim();
-        const l3 = document.getElementById('l3Filter').value.trim();
-        const p = document.getElementById('pFilter').value.trim();
-        const tag = document.getElementById('tagFilter').value.trim();
-        
-        const hPrice = document.getElementById('highPriceFilter').value.trim();
-        const hCargo = document.getElementById('heavyCargoFilter').value.trim();
-        const fRecruit = document.getElementById('focusRecruitFilter').value.trim();
-        
+        const val = id => document.getElementById(id).value.trim();
+        const q = val('searchInput').toLowerCase();
+        const l1 = val('l1Filter'), l2 = val('l2Filter'), l3 = val('l3Filter'), l4 = val('l4Filter');
+        const site = val('siteFilter');
+        const p = val('pFilter');
+        const tag = val('tagFilter');
+        const hPrice = val('highPriceFilter');
+        const hCargo = val('heavyCargoFilter');
         const min = parseFloat(document.getElementById('minPrice').value) || 0;
         const max = parseFloat(document.getElementById('maxPrice').value) || Infinity;
-        
-        filteredData = products.filter(arr => {
-            const i = mapData(arr);
-            
-            const matchQuery = !q || (i.title && i.title.toLowerCase().includes(q)) || (i.inviteId && i.inviteId.toLowerCase().includes(q));
-            const matchL1 = !l1 || (i.l1 && i.l1.trim() === l1);
-            const matchL2 = !l2 || (i.l2 && i.l2.trim() === l2);
-            const matchL3 = !l3 || (i.l3 && i.l3.trim() === l3);
-            const matchP = !p || (i.judge && i.judge.trim() === p);
-            const matchTag = !tag || (i.specialTag && i.specialTag.trim() === tag);
-            
-            const matchHPrice = !hPrice || (i.highPrice && i.highPrice.trim() === hPrice);
-            const matchHCargo = !hCargo || (i.heavyCargo && i.heavyCargo.trim() === hCargo);
-            const matchFRecruit = !fRecruit || (i.focusRecruit && i.focusRecruit.trim() === fRecruit);
-            const matchPrice = i.price >= min && i.price <= max;
-            
-            return matchQuery && matchL1 && matchL2 && matchL3 && matchP && matchTag && matchHPrice && matchHCargo && matchFRecruit && matchPrice;
-        });
-        
+
+        filteredData = items.filter(i =>
+            (!q || i.title.toLowerCase().includes(q) || i.inviteId.toLowerCase().includes(q)) &&
+            (!l1 || i.l1 === l1) &&
+            (!l2 || i.l2 === l2) &&
+            (!l3 || i.l3 === l3) &&
+            (!l4 || i.l4 === l4) &&
+            (!site || i.site === site) &&
+            (!p || i.judge.trim() === p) &&
+            (!tag || i.specialTag === tag) &&
+            (!hPrice || i.highPrice.trim() === hPrice) &&
+            (!hCargo || i.heavyCargo.trim() === hCargo) &&
+            i.price >= min && i.price <= max
+        );
+
         const sort = document.getElementById('sortOrder').value;
-        if (sort === 'priceAsc') filteredData.sort((a,b) => (parseFloat(a[2]) || 0) - (parseFloat(b[2]) || 0));
-        else if (sort === 'priceDesc') filteredData.sort((a,b) => (parseFloat(b[2]) || 0) - (parseFloat(a[2]) || 0));
-        
+        if (sort === 'priceAsc') filteredData.sort((a, b) => a.price - b.price);
+        else if (sort === 'priceDesc') filteredData.sort((a, b) => b.price - a.price);
+
         document.getElementById('countDisplay').innerText = `已筛选：${filteredData.length} 款`;
         render(filteredData, 1);
     }
 
     // 初始化下拉选单
+    function fillSelect(id, label, values) {
+        const s = document.getElementById(id);
+        s.innerHTML = `<option value="">${label}(全部)</option>`;
+        values.forEach(v => {
+            const o = document.createElement('option');
+            o.value = v; o.textContent = v;
+            s.appendChild(o);
+        });
+    }
+
+    const uniq = arr => [...new Set(arr)].filter(v => v);
+
     function initFilters() {
-        const l1Select = document.getElementById('l1Filter');
-        l1Select.innerHTML = '<option value="">二级类目(全部)</option>';
-        [...new Set(products.map(p => p[5] ? p[5].trim() : ""))].filter(v => v).forEach(v => {
-            l1Select.innerHTML += `<option value="${v}">${v}</option>`;
-        });
-
-        const tagSelect = document.getElementById('tagFilter');
-        tagSelect.innerHTML = '<option value="">销售优先级(全部)</option>';
-        [...new Set(products.map(p => p[12] ? p[12].trim() : ""))].filter(v => v).forEach(v => {
-            tagSelect.innerHTML += `<option value="${v}">${v}</option>`;
-        });
-
+        fillSelect('l1Filter', '二级类目', uniq(items.map(i => i.l1)));
+        fillSelect('tagFilter', '销售优先级', uniq(items.map(i => i.specialTag)));
+        fillSelect('siteFilter', '原畅销站点', uniq(items.map(i => i.site)));
         updateL2();
     }
 
-    // 二、三、四级类目强联动逻辑
+    // 二～五级类目联动
     function updateL2() {
-        const l1Value = document.getElementById('l1Filter').value;
-        const s = document.getElementById('l2Filter');
-        s.innerHTML = '<option value="">三级类目(全部)</option>';
-        
-        const availableL2 = [...new Set(
-            products
-            .filter(p => p && (!l1Value || (p[5] && p[5].trim() === l1Value.trim())))
-            .map(p => p[6] ? p[6].trim() : "")
-            .filter(v => v)
-        )];
-
-        availableL2.forEach(v => {
-            s.innerHTML += `<option value="${v}">${v}</option>`;
-        });
-
+        const l1 = document.getElementById('l1Filter').value;
+        fillSelect('l2Filter', '三级类目', uniq(items.filter(i => !l1 || i.l1 === l1).map(i => i.l2)));
         updateL3();
     }
 
     function updateL3() {
-        const l1Value = document.getElementById('l1Filter').value;
-        const l2Value = document.getElementById('l2Filter').value;
-        const s = document.getElementById('l3Filter');
-        s.innerHTML = '<option value="">四级类目(全部)</option>';
-
-        const availableL3 = [...new Set(
-            products
-            .filter(p => p &&
-                (!l1Value || (p[5] && p[5].trim() === l1Value.trim())) &&
-                (!l2Value || (p[6] && p[6].trim() === l2Value.trim())))
-            .map(p => p[7] ? p[7].trim() : "")
-            .filter(v => v)
-        )];
-
-        availableL3.forEach(v => {
-            s.innerHTML += `<option value="${v}">${v}</option>`;
-        });
+        const l1 = document.getElementById('l1Filter').value;
+        const l2 = document.getElementById('l2Filter').value;
+        fillSelect('l3Filter', '四级类目', uniq(items.filter(i =>
+            (!l1 || i.l1 === l1) && (!l2 || i.l2 === l2)).map(i => i.l3)));
+        updateL4();
     }
 
-    // 防抖计时器
-    let timer; 
+    function updateL4() {
+        const l1 = document.getElementById('l1Filter').value;
+        const l2 = document.getElementById('l2Filter').value;
+        const l3 = document.getElementById('l3Filter').value;
+        fillSelect('l4Filter', '五级类目', uniq(items.filter(i =>
+            (!l1 || i.l1 === l1) && (!l2 || i.l2 === l2) && (!l3 || i.l3 === l3)).map(i => i.l4)));
+    }
+
+    // 防抖
+    let timer;
     const debouncedFilter = () => { clearTimeout(timer); timer = setTimeout(applyFilters, 300); };
-    
+
     window.onload = loadData;
 </script>
 </body>
